@@ -4,9 +4,21 @@
 #include <iomanip>
 #include <cmath>
 #include <stack>
+#include <chrono>
+#include <fstream>
 using namespace std;
 
-static string ch_udia_hor = "'->", ch_ddia_hor = ",->", ch_ver_spa = "| ";
+static string ch_udia_hor = "'->", ch_ddia_hor = ",->", ch_ver_spa = "| ", sep = "--------------------------------------------------------------------\n";
+ofstream tree_f("tree.txt", ios::app);
+
+int menu(int k) {
+	if (!k)
+		cout << "\n\t1. Создать АВЛ-дерево\n\t2. Вывести АВЛ-дерево на экран\n\t3. Найти элемент АВЛ-дерева\n\t4. Добавить элемент в АВЛ-дерево\n\t5. Удалить элемент АВЛ-дерева\n\t6. Завершить работу программы\n>>";
+	else cout << "7. Открыть меню\n>>";
+	cin >> k;
+	if (k >= 1 && k <= 7) return k;
+	else return -1;
+}
 
 struct BST {
 	int height;
@@ -15,7 +27,7 @@ struct BST {
 	BST* right;
 	BST() : value(0), left(nullptr), right(nullptr) {}
 	BST(int x) : value(x), left(nullptr), right(nullptr) {}
-	BST(int x,  BST* left,  BST* right) : value(x), left(left), right(right) {}
+	BST(int x, BST* left, BST* right) : value(x), left(left), right(right) {}
 };
 
 int findDepth(BST* node, int const& d = 0) {
@@ -56,7 +68,7 @@ void addNode(BST*& node, int val) {
 	else if (node->value < val) addNode(node->right, val);
 }
 
-BST* createTree( BST* node, vector <int> &vec) {
+BST* createTree(BST* node, vector <int>& vec) {
 	for (int val : vec) {
 		addNode(node, val);
 	}
@@ -68,6 +80,7 @@ void printTree(BST const* node, string const& rpref = "", string const& cpref = 
 	if (node->right)
 		printTree(node->right, rpref + "  ", rpref + ch_ddia_hor, rpref + ch_ver_spa);
 	cout << cpref << node->value << '\n';
+	tree_f << cpref << node->value << '\n';
 	if (node->left)
 		printTree(node->left, lpref + ch_ver_spa, lpref + ch_udia_hor, lpref + "  ");
 }
@@ -100,12 +113,12 @@ BST* findNode(BST* node, int data, stack <BST*>& branch) {
 	}
 }
 
-void deleteNode(BST* node, BST* prev) {
+BST* deleteNode(BST*& node, BST* prev) {
 	if (node->right && node->left) {
 		stack <BST*> branch;
 		BST* new_node = findMaxLeft(node->left, branch);
-		BST* prev_new_node = branch.top();
-		prev_new_node->right = new_node->left;
+		BST* prev_new_node = branch.empty() ? nullptr : branch.top();
+		if (prev_new_node) prev_new_node->right = new_node->left;
 		if (prev) {
 			if (prev->right == node) prev->right = new_node;
 			else prev->left = new_node;
@@ -113,9 +126,9 @@ void deleteNode(BST* node, BST* prev) {
 		new_node->right = node->right;
 		if (node->left != new_node) new_node->left = node->left;
 		delete node;
-		setNodeDepth(prev_new_node->right);
+		if (prev_new_node) if (prev_new_node->right) setNodeDepth(prev_new_node->right);
 		setNodeDepth(new_node, false);
-		for (; !branch.empty();branch.pop()) {
+		for (; !branch.empty(); branch.pop()) {
 			try {
 				setNodeDepth(branch.top(), false);
 			}
@@ -123,7 +136,7 @@ void deleteNode(BST* node, BST* prev) {
 				break;
 			}
 		}
-		return;
+		return node = new_node;
 	}
 	else if (node->right) {
 		BST* new_node = node->right;
@@ -133,7 +146,7 @@ void deleteNode(BST* node, BST* prev) {
 		}
 		delete node;
 		setNodeDepth(new_node, false);
-		return;
+		return node = new_node;
 	}
 	else if (node->left) {
 		BST* new_node = node->left;
@@ -143,13 +156,14 @@ void deleteNode(BST* node, BST* prev) {
 		}
 		delete node;
 		setNodeDepth(new_node, false);
-		return;
+		return node = new_node;
 	}
 	if (prev) {
 		if (prev->right == node) prev->right = nullptr;
 		else prev->left = nullptr;
 	}
-	delete node; 
+	delete node;
+	return node = nullptr;
 }
 
 int getHeight(BST* node) {
@@ -190,7 +204,7 @@ void leftRotate(BST*& node) {
 void balance(BST*& node) {
 	while (getBalance(node) < -1) {
 		while (getBalance(node->left) >= 1) leftRotate(node->left);
-		rightRotate(node); 
+		rightRotate(node);
 	}
 	while (getBalance(node) > 1) {
 		while (getBalance(node->right) <= -1) rightRotate(node->right);
@@ -200,60 +214,137 @@ void balance(BST*& node) {
 
 void balanceTree(BST*& node) {
 	if (node) balance(node);
+	else return;
 	if (node->right) balanceTree(node->right);
 	if (node->left) balanceTree(node->left);
 }
 
 int main() {
 	setlocale(LC_ALL, "");
-	// создание вектора чисел из потока ввода
-	string str_numbers, curr_number = "";
-	vector <int> vec_numbers;
-	getline(cin, str_numbers);
-	for (char c : str_numbers) {
-		if (isdigit(c)) {
-			curr_number += c;
-		}
-		else if (!curr_number.empty()) {
-			vec_numbers.push_back(stoi(curr_number));
-			curr_number.clear();
-		}
-	}
-	if (!curr_number.empty()) {
-		vec_numbers.push_back(stoi(curr_number));
-		curr_number.clear();
-	}
-	// создание бинарного дерева
+	int key = 0;
 	BST* tree = nullptr;
-	tree = createTree(tree, vec_numbers);
-	setNodeDepth(tree);
-	balanceTree(tree);
-	setNodeDepth(tree);
-	// вывод бинарного дерева
-	printTree(tree);
-	// вставка элемента
-	int new_node1;
-	cin >> new_node1;
-	addNode(tree, new_node1);
-	setNodeDepth(tree);
-	balanceTree(tree);
-	setNodeDepth(tree, false);
-	printTree(tree);
-	// удаление элемента
-	int data;
-	stack <BST*> branch;
-	cin >> data;
-	BST* new_node = findNode(tree, data, branch);
-	if (new_node){
-		deleteNode(new_node, branch.top());
-		for (; !branch.empty();) {
-			setNodeDepth(branch.top(), false);
-			branch.pop();
+	key = menu(key);
+	while (true) {
+		switch (key) {
+		case -1:
+			if (key == -1) {
+				cout << "Invalid input\n";
+				cin.clear();
+				cin.ignore();
+			}
+			break;
+		case 1: {
+			cout << "1. Создать АВЛ-дерево из потока ввода\n2. Создать АВЛ-дерево, заполненное случайными числами(-99 до 99)\n>>";
+			int flag;
+			string str_numbers, curr_number = "";
+			vector <int> vec_numbers;
+			cin >> flag;
+			switch (flag) {
+			case 1: {
+				cout << "Введите числа, из которых будет состоять дерево\n>>";
+				cin.clear();
+				cin.ignore();
+				getline(cin, str_numbers);
+				for (char c : str_numbers) {
+					if (isdigit(c)) {
+						curr_number += c;
+					}
+					else if (!curr_number.empty()) {
+						vec_numbers.push_back(stoi(curr_number));
+						curr_number.clear();
+					}
+				}
+				if (!curr_number.empty()) {
+					vec_numbers.push_back(stoi(curr_number));
+					curr_number.clear();
+				}
+				tree = createTree(tree, vec_numbers);
+				setNodeDepth(tree);
+				balanceTree(tree);
+				setNodeDepth(tree);
+				if (tree) cout << "Дерево создано\n";
+				else cout << "the tree is empty\n";
+				break;
+			}
+			case 2: {
+				int N;
+				cout << "Введите количество элементов дерева\n>>";
+				cin >> N;
+				for (int i = 0; i < N; i++) {
+					vec_numbers.push_back((rand() % 199) - 100);
+				}
+				tree = createTree(tree, vec_numbers);
+				setNodeDepth(tree);
+				balanceTree(tree);
+				setNodeDepth(tree);
+				if (tree) cout << "Дерево создано\n";
+				else cout << "the tree is empty\n";
+				break;
+			}
+			default: {
+				cout << "Invalid input\n";
+				break;
+			}
+			}
+			break;
 		}
-		balanceTree(tree);
-		setNodeDepth(tree, false);
-		printTree(tree);
+		case 2: {
+			// вывод бинарного дерева
+			printTree(tree);
+			tree_f << sep;
+			break;
+		}
+		case 3: {
+			int new_node2;
+			stack <BST*> branch;
+			cout << "Введите элемент для поиска\n>>";
+			cin >> new_node2;
+			if (findNode(tree, new_node2, branch)) cout << "Элемент найден\n";
+			else cout << "Элемент не найден\n";
+			break;
+		}
+		case 4: {
+			// вставка элемента
+			int new_node1;
+			cout << "Введите элемент для вставки\n>>";
+			cin >> new_node1;
+			addNode(tree, new_node1);
+			setNodeDepth(tree);
+			balanceTree(tree);
+			setNodeDepth(tree, false);
+			break;
+		}
+		case 5: {
+			// удаление элемента
+			int data;
+			stack <BST*> branch;
+			cout << "Введите элемент для удаления\n>>";
+			cin >> data;
+			BST* new_node = findNode(tree, data, branch);
+			if (new_node) {
+				branch.empty() ? tree = deleteNode(new_node, 0) : deleteNode(new_node, branch.top());
+				for (; !branch.empty();) {
+					setNodeDepth(branch.top(), false);
+					branch.pop();
+				}
+				balanceTree(tree);
+				setNodeDepth(tree, false);
+				printTree(tree);
+				tree_f << sep;
+			}
+			else cout << "Node not found\n";
+			break;
+		}
+		case 6: {
+			return 0;
+		}
+		default: {
+			key = 0;
+			break;
+		}
+		}
+		key = menu(key);
 	}
-	else cout << "Node not found\n";
+	tree_f.close();
 	return 0;
 }
