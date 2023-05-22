@@ -242,6 +242,7 @@ int main() {
 			switch (flag) {
 			case 1: {
 				cout << "Введите числа, из которых будет состоять дерево\n>>";
+				auto start_time = chrono::high_resolution_clock::now();
 				cin.clear();
 				cin.ignore();
 				getline(cin, str_numbers);
@@ -260,25 +261,40 @@ int main() {
 				}
 				tree = createTree(tree, vec_numbers);
 				setNodeDepth(tree);
+				auto start_bal = chrono::high_resolution_clock::now();
 				balanceTree(tree);
+				auto end_bal = chrono::high_resolution_clock::now();
+				auto total_bal = chrono::duration_cast<chrono::microseconds>(end_bal - start_bal).count();
+				cout << "Время балансировки: " << total_bal << " мкс" << '\n';
 				setNodeDepth(tree);
+				auto end_time = chrono::high_resolution_clock::now();
+				auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time).count();
 				if (tree) cout << "Дерево создано\n";
 				else cout << "the tree is empty\n";
+				cout << "Время создания дерева: " << duration << " мкс" << endl;
 				break;
 			}
 			case 2: {
 				int N;
 				cout << "Введите количество элементов дерева\n>>";
+				auto start_time = chrono::high_resolution_clock::now();
 				cin >> N;
 				for (int i = 0; i < N; i++) {
 					vec_numbers.push_back((rand() % 199) - 100);
 				}
 				tree = createTree(tree, vec_numbers);
 				setNodeDepth(tree);
+				auto start_bal = chrono::high_resolution_clock::now();
 				balanceTree(tree);
+				auto end_bal = chrono::high_resolution_clock::now();
+				auto total_bal = chrono::duration_cast<chrono::microseconds>(end_bal - start_bal).count();
+				cout << "Время балансировки: " << total_bal << " мкс" << '\n';
 				setNodeDepth(tree);
+				auto end_time = chrono::high_resolution_clock::now();
+				auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time).count();
 				if (tree) cout << "Дерево создано\n";
 				else cout << "the tree is empty\n";
+				cout << "Время создания дерева: " << duration << " мкс" << endl;
 				break;
 			}
 			default: {
@@ -299,8 +315,12 @@ int main() {
 			stack <BST*> branch;
 			cout << "Введите элемент для поиска\n>>";
 			cin >> new_node2;
+			auto start_time = chrono::high_resolution_clock::now();
 			if (findNode(tree, new_node2, branch)) cout << "Элемент найден\n";
 			else cout << "Элемент не найден\n";
+			auto end_time = chrono::high_resolution_clock::now();
+			auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time).count();
+			cout << "Время поиска элемента: " << duration << " мкс" << endl;
 			break;
 		}
 		case 4: {
@@ -308,10 +328,18 @@ int main() {
 			int new_node1;
 			cout << "Введите элемент для вставки\n>>";
 			cin >> new_node1;
+			auto start_time = chrono::high_resolution_clock::now();
 			addNode(tree, new_node1);
+			auto end_time = chrono::high_resolution_clock::now();
+			auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time).count();
 			setNodeDepth(tree);
+			auto start_bal = chrono::high_resolution_clock::now();
 			balanceTree(tree);
+			auto end_bal = chrono::high_resolution_clock::now();
+			auto total_bal = chrono::duration_cast<chrono::microseconds>(end_bal - start_bal).count();
+			cout << "Время балансировки: " << total_bal << " мкс" << '\n';
 			setNodeDepth(tree, false);
+			cout << "Время вставки элемента: " << duration << " мкс" << endl;
 			break;
 		}
 		case 5: {
@@ -322,14 +350,21 @@ int main() {
 			cin >> data;
 			BST* new_node = findNode(tree, data, branch);
 			if (new_node) {
+				auto start_time = chrono::high_resolution_clock::now();
 				branch.empty() ? tree = deleteNode(new_node, 0) : deleteNode(new_node, branch.top());
+				auto end_time = chrono::high_resolution_clock::now();
+				auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time).count();
 				for (; !branch.empty();) {
 					setNodeDepth(branch.top(), false);
 					branch.pop();
 				}
+				auto start_bal = chrono::high_resolution_clock::now();
 				balanceTree(tree);
+				auto end_bal = chrono::high_resolution_clock::now();
+				auto total_bal = chrono::duration_cast<chrono::microseconds>(end_bal - start_bal).count();
+				cout << "Время балансировки: " << total_bal << " мкс" << '\n';
 				setNodeDepth(tree, false);
-				printTree(tree);
+				cout << "Время удаления элемента: " << duration << " мкс" << endl;
 				tree_f << sep;
 			}
 			else cout << "Node not found\n";
