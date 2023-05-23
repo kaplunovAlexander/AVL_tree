@@ -10,6 +10,7 @@ using namespace std;
 
 static string ch_udia_hor = "'->", ch_ddia_hor = ",->", ch_ver_spa = "| ", sep = "--------------------------------------------------------------------\n";
 ofstream tree_f("tree.txt", ios::app);
+ofstream tree_ans("output ans.txt", ios::app);
 
 int menu(int k) {
 	if (!k)
@@ -80,9 +81,26 @@ void printTree(BST const* node, string const& rpref = "", string const& cpref = 
 	if (node->right)
 		printTree(node->right, rpref + "  ", rpref + ch_ddia_hor, rpref + ch_ver_spa);
 	cout << cpref << node->value << '\n';
-	tree_f << cpref << node->value << '\n';
 	if (node->left)
 		printTree(node->left, lpref + ch_ver_spa, lpref + ch_udia_hor, lpref + "  ");
+}
+
+void printTreeFile(BST const* node, string const& rpref = "", string const& cpref = "", string const& lpref = "") {
+	if (!node) return;
+	if (node->right)
+		printTreeFile(node->right, rpref + "  ", rpref + ch_ddia_hor, rpref + ch_ver_spa);
+	tree_f << cpref << node->value << '\n';
+	if (node->left)
+		printTreeFile(node->left, lpref + ch_ver_spa, lpref + ch_udia_hor, lpref + "  ");
+}
+
+void printTreeAns(BST const* node, string const& rpref = "", string const& cpref = "", string const& lpref = "") {
+	if (!node) return;
+	if (node->right)
+		printTreeAns(node->right, rpref + "  ", rpref + ch_ddia_hor, rpref + ch_ver_spa);
+	tree_ans << cpref << node->value << '\n';
+	if (node->left)
+		printTreeAns(node->left, lpref + ch_ver_spa, lpref + ch_udia_hor, lpref + "  ");
 }
 
 BST* findMaxLeft(BST* node, stack <BST*>& branch) {
@@ -234,6 +252,7 @@ int main() {
 			}
 			break;
 		case 1: {
+			tree = nullptr;
 			cout << "1. Создать АВЛ-дерево из потока ввода\n2. Создать АВЛ-дерево, заполненное случайными числами(-99 до 99)\n>>";
 			int flag;
 			string str_numbers, curr_number = "";
@@ -242,10 +261,10 @@ int main() {
 			switch (flag) {
 			case 1: {
 				cout << "Введите числа, из которых будет состоять дерево\n>>";
-				auto start_time = chrono::high_resolution_clock::now();
 				cin.clear();
 				cin.ignore();
 				getline(cin, str_numbers);
+				auto start_time = chrono::high_resolution_clock::now();
 				for (char c : str_numbers) {
 					if (isdigit(c)) {
 						curr_number += c;
@@ -265,20 +284,25 @@ int main() {
 				balanceTree(tree);
 				auto end_bal = chrono::high_resolution_clock::now();
 				auto total_bal = chrono::duration_cast<chrono::microseconds>(end_bal - start_bal).count();
-				cout << "Время балансировки: " << total_bal << " мкс" << '\n';
 				setNodeDepth(tree);
 				auto end_time = chrono::high_resolution_clock::now();
 				auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time).count();
 				if (tree) cout << "Дерево создано\n";
 				else cout << "the tree is empty\n";
+				cout << "Время балансировки: " << total_bal << " мкс" << '\n';
 				cout << "Время создания дерева: " << duration << " мкс" << endl;
+				printTreeFile(tree);
+				printTreeAns(tree);
+				tree_f << sep;
+				tree_ans << sep;
 				break;
 			}
 			case 2: {
+				tree = nullptr;
 				int N;
 				cout << "Введите количество элементов дерева\n>>";
-				auto start_time = chrono::high_resolution_clock::now();
 				cin >> N;
+				auto start_time = chrono::high_resolution_clock::now();
 				for (int i = 0; i < N; i++) {
 					vec_numbers.push_back((rand() % 199) - 100);
 				}
@@ -288,13 +312,17 @@ int main() {
 				balanceTree(tree);
 				auto end_bal = chrono::high_resolution_clock::now();
 				auto total_bal = chrono::duration_cast<chrono::microseconds>(end_bal - start_bal).count();
-				cout << "Время балансировки: " << total_bal << " мкс" << '\n';
 				setNodeDepth(tree);
 				auto end_time = chrono::high_resolution_clock::now();
 				auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time).count();
 				if (tree) cout << "Дерево создано\n";
 				else cout << "the tree is empty\n";
+				cout << "Время балансировки: " << total_bal << " мкс" << '\n';
 				cout << "Время создания дерева: " << duration << " мкс" << endl;
+				printTreeFile(tree);
+				printTreeAns(tree);
+				tree_f << sep;
+				tree_ans << sep;
 				break;
 			}
 			default: {
@@ -307,7 +335,6 @@ int main() {
 		case 2: {
 			// вывод бинарного дерева
 			printTree(tree);
-			tree_f << sep;
 			break;
 		}
 		case 3: {
@@ -315,6 +342,7 @@ int main() {
 			stack <BST*> branch;
 			cout << "Введите элемент для поиска\n>>";
 			cin >> new_node2;
+			cin.sync();
 			auto start_time = chrono::high_resolution_clock::now();
 			if (findNode(tree, new_node2, branch)) cout << "Элемент найден\n";
 			else cout << "Элемент не найден\n";
@@ -328,6 +356,7 @@ int main() {
 			int new_node1;
 			cout << "Введите элемент для вставки\n>>";
 			cin >> new_node1;
+			cin.sync();
 			auto start_time = chrono::high_resolution_clock::now();
 			addNode(tree, new_node1);
 			auto end_time = chrono::high_resolution_clock::now();
@@ -337,9 +366,12 @@ int main() {
 			balanceTree(tree);
 			auto end_bal = chrono::high_resolution_clock::now();
 			auto total_bal = chrono::duration_cast<chrono::microseconds>(end_bal - start_bal).count();
+			tree_ans << "Дерево после добавления элемента:\n";
 			cout << "Время балансировки: " << total_bal << " мкс" << '\n';
 			setNodeDepth(tree, false);
 			cout << "Время вставки элемента: " << duration << " мкс" << endl;
+			printTreeAns(tree);
+			tree_ans << sep;
 			break;
 		}
 		case 5: {
@@ -348,6 +380,7 @@ int main() {
 			stack <BST*> branch;
 			cout << "Введите элемент для удаления\n>>";
 			cin >> data;
+			cin.sync();
 			BST* new_node = findNode(tree, data, branch);
 			if (new_node) {
 				auto start_time = chrono::high_resolution_clock::now();
@@ -362,10 +395,12 @@ int main() {
 				balanceTree(tree);
 				auto end_bal = chrono::high_resolution_clock::now();
 				auto total_bal = chrono::duration_cast<chrono::microseconds>(end_bal - start_bal).count();
+				tree_ans << "Дерево после удаления элемента:\n";
 				cout << "Время балансировки: " << total_bal << " мкс" << '\n';
 				setNodeDepth(tree, false);
 				cout << "Время удаления элемента: " << duration << " мкс" << endl;
-				tree_f << sep;
+				printTreeAns(tree);
+				tree_ans << sep;
 			}
 			else cout << "Node not found\n";
 			break;
